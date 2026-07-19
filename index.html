@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSC JE / AI-CBT Exam Portal</title>
+    <style>
+        /* Modern CSS Variables for Styling */
+        :root {
+            --primary-blue: #0056b3;
+            --dark-blue: #1d4ed8;
+            --sky-blue: #0284c7;
+            --bg-light: #f8fafc;
+            --text-main: #334155;
+            --border-color: #e2e8f0;
+            --success-green: #15803d;
+            --danger-red: #dc2626;
+            --yellow-accent: #fbbf24;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* Top Header System */
+        .header {
+            background-color: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .logo-area {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e3c72;
+            letter-spacing: 0.5px;
+        }
+
+        .top-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-blue {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-blue:hover {
+            background-color: #004494;
+        }
+
+        .timer-box {
+            text-align: right;
+            background-color: #fff5f5;
+            border: 1px solid #fee2e2;
+            padding: 6px 14px;
+            border-radius: 6px;
+        }
+
+        .timer-label {
+            font-size: 11px;
+            color: #7f1d1d;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .timer-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--danger-red);
+        }
+
+        /* Main Workspace Container */
+        .main-container {
+            display: flex;
+            padding: 15px;
+            gap: 15px;
+            height: calc(100vh - 70px);
+            min-height: 550px;
+        }
+
+        /* Left Sidebar: Question Palette */
+        .sidebar {
+            width: 280px;
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background-color: #f8fafc;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 5px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+        }
+
+        .tab.active {
+            color: var(--danger-red);
+            border-bottom: 3px solid var(--danger-red);
+            background-color: #ffffff;
+        }
+
+        .part-selectors {
+            display: flex;
+            gap: 4px;
+            padding: 10px;
+            background-color: #f1f5f9;
+        }
+
+        .part-btn {
+            flex: 1;
+            font-size: 11px;
+            padding: 6px 2px;
+            text-align: center;
+            border-radius: 4px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .part-green { background-color: var(--success-green); }
+        .part-blue { background-color: var(--dark-blue); }
+
+        .section-nav {
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            background-color: #ffffff;
+            color: #1e293b;
+        }
+
+        /* Grid Navigation Items */
+        .grid-container {
+            padding: 14px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .grid-item {
+            text-align: center;
+            padding: 10px 0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .grid-item:hover {
+            transform: scale(1.05);
+        }
+
+        .grid-item.answered { background-color: var(--success-green); }
+        .grid-item.active-q { background-color: var(--dark-blue); }
+        .grid-item.not-visited { background-color: #cbd5e1; color: #475569; }
+
+        /* Sidebar Status Footer */
+        .sidebar-footer {
+            background-color: #f1f5f9;
+            border-top: 1px solid var(--border-color);
+            padding: 12px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .footer-header {
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #cbd5e1;
+            margin-bottom: 8px;
+            color: #475569;
+            text-transform: uppercase;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            padding: 3px 6px;
+            font-weight: 600;
+        }
+
+        .stat-badge {
+            background-color: var(--yellow-accent);
+            color: #0f172a;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 11px;
+        }
+
+        /* Right Content Pane: Question Workspace */
+        .content-area {
+            flex-grow: 1;
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .content-header {
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8fafc;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .question-number {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-action {
+            padding: 8px 18px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+        }
+
+        .btn-review { background-color: var(--sky-blue); }
+        .btn-save { background-color: #2563eb; }
+        .btn-submit { background-color: var(--dark-blue); }
+
+        /* Dynamic Content Body */
+        .question-body {
+            padding: 24px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .question-text {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            line-height: 1.6;
+            color: #1e293b;
+        }
+
+        .address-box {
+            background-color: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            padding: 16px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+            color: #334155;
+        }
+
+        /* Interactive Options Rendering */
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option-item {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s, border 0.2s;
+            font-weight: 500;
+        }
+
+        .option-item:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .option-radio {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #cbd5e1;
+            border-radius: 50%;
+            margin-right: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s;
+        }
+
+        /* JavaScript selection logic classes */
+        .option-item.selected {
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+        }
+
+        .option-item.selected .option-radio {
+            border-color: #3b82f6;
+            background-color: #3b82f6;
+        }
+
+        .option-item.selected .option-radio::after {
+            content: "";
+            width: 6px;
+            height: 6px;
+            background-color: white;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Panel -->
+    <div class="header">
+        <div class="logo-area">AI-CBT Portal (SSC JE Pattern)</div>
+        <div class="top-controls">
+            <button class="btn-blue" onclick="alert('Zoom Out Clicked')">Zoom (-)</button>
+            <button class="btn-blue" onclick="alert('Zoom In Clicked')">Zoom (+)</button>
+        </div>
+        <div class="timer-box">
+            <div class="timer-label">Time Left</div>
+            <div id="countdown" class="timer-value">49 : 03</div>
+        </div>
+    </div>
+
+    <!-- Interface Body -->
+    <div class="main-container">
+        
+        <!-- Left Section: Navigation Panel -->
+        <div class="sidebar">
+            <div class="sidebar-tabs">
+                <div class="tab active">SYMBOLS</div>
+                <div class="tab">INSTRUCTIONS</div>
+            </div>
+            <div class="part-selectors">
+                <div class="part-btn part-green">PART-A</div>
+                <div class="part-btn part-blue">PART-B</div>
+                <div class="part-btn part-blue">PART-C</div>
+                <div class="part-btn part-blue">PART-D</div>
+            </div>
+            <div class="section-nav">
+                <span>◀️ General Intelligence & Reasoning</span>
+                <span>▶️</span>
+            </div>
+            
+            <!-- Grid System for Questions -->
+            <div class="grid-container">
+                <div class="grid-item answered">1</div>
+                <div class="grid-item answered">2</div>
+                <div class="grid-item answered">3</div>
+                <div class="grid-item answered">4</div>
+                <div class="grid-item answered">5</div>
+                <div class="grid-item answered">6</div>
+                <div class="grid-item answered">7</div>
+                <div class="grid-item answered">8</div>
+                <div class="grid-item answered">9</div>
+                <div class="grid-item answered">10</div>
+                <div class="grid-item answered">11</div>
+                <div class="grid-item answered">12</div>
+                <div class="grid-item answered">13</div>
+                <div class="grid-item active-q">14</div>
+                <div class="grid-item not-visited">15</div>
+                <div class="grid-item not-visited">16</div>
+            </div>
+            
+            <!-- Live Counter Panel -->
+            <div class="sidebar-footer">
+                <div class="footer-header">AR (AI Analysis)</div>
+                <div class="stat-row">
+                    <span>Answered</span>
+                    <span class="stat-badge" style="background-color: #d1fae5; color: #065f46;">13</span>
+                </div>
+                <div class="stat-row" style="margin-top: 4px;">
+                    <span>Not Answered</span>
+                    <span class="stat-badge" style="background-color: #fee2e2; color: #991b1b;">3</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Section: Interactive Test Engine -->
+        <div class="content-area">
+            <div class="content-header">
+                <div class="question-number">Question No. 14</div>
+                <div class="action-buttons">
+                    <button class="btn-action btn-review" onclick="alert('Question marked for review!')">Mark for Review</button>
+                    <button class="btn-action btn-save" onclick="handleSaveNext()">Save & Next</button>
+                    <button class="btn-action btn-submit" onclick="alert('Test submitted successfully!')">Submit Test</button>
+                </div>
+            </div>
+            
+            <div class="question-body">
+                <div class="question-text">Compare the following two addresses.</div>
+                
+                <div class="address-box">
+                    <strong>Address 1:</strong> Ms. Neha Verma, Flat No. 204, Tower B, Green Acres, Pune 411045<br>
+                    <strong>Address 2:</strong> Mrs. Neha Verma, Flat No. 204, Tower B, Green Acres Society, Pune - 411045
+                </div>
+                
+                <div class="question-text" style="font-size: 14px; font-weight: normal; margin-bottom: 20px;">
+                    Are these likely to be the same?
+                </div>
+                
+                <!-- Multiple Choice Options -->
+                <div class="options-list">
+                    <div class="option-item" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <span>No, city codes do not match</span>
+                    </div>
+                    <div class="option-item" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <span>Yes, all major details match</span>
+                    </div>
+                    <div class="option-item" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <span>No, the flat numbers are different</span>
+                    </div>
+                    <div class="option-item" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <span>No, the name titles are different</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active JavaScript System Engine -->
+    <script>
+        // Option selection logic
+        function selectOption(element) {
+            // Remove selection from all items
+            const items = document.querySelectorAll('.option-item');
+            items.forEach(item => item.classList.remove('selected'));
+            
+            // Add selection to clicked item
+            element.classList.add('selected');
+        }
+
+        // Save & Next dynamic demonstration logic
+        function handleSaveNext() {
+            alert('Response saved! Navigating to Next Question...');
+            // Change color of Q14 in grid to green (Answered)
+            const activeGridItem = document.querySelector('.grid-item.active-q');
+            if(activeGridItem) {
+                activeGridItem.classList.remove('active-q');
+                activeGridItem.classList.add('answered');
+            }
+        }
+
+        // Standard Timer Engine Clock Countdown (49 Mins 3 Secs)
+        let totalSeconds = 49 * 60 + 3;
+        const timerElement = document.getElementById('countdown');
+
+        setInterval(() => {
+            if (totalSeconds <= 0) {
+                timerElement.innerHTML = "00 : 00";
+                return;
+            }
+            totalSeconds--;
+            let minutes = Math.floor(totalSeconds / 60);
+            let seconds = totalSeconds % 60;
+
+            // Padding with leading zeros
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+
+            timerElement.innerHTML = ${minutes} : ${seconds};
+        }, 1000);
+    </script>
+</body>
+</html>
