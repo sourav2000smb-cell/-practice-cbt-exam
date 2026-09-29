@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RRB JE CBT-1 EXAM SIMULATOR</title>
+    <!-- Auto PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; user-select: none; }
+        body { background-color: #f4f6f8; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .hidden { display: none !important; }
+
+        header { background-color: #8b0e0aec; color: white; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; height: 50px; z-index: 10; }
+        header h1 { font-size: 18px; text-transform: uppercase; letter-spacing: 1px; width: 100%; text-align: center; font-weight: bold; }
+
+        .page { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+
+        /* 1. LOGIN PAGE STYLES */
+        .login-container { max-width: 450px; margin: 40px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: relative; }
+        .login-form h2 { margin-bottom: 20px; color: #083fb5cb; text-align: center; border-bottom: 2px solid #003366; padding-bottom: 5px; }
+        .input-keypad-wrapper { display: flex; gap: 8px; margin-top: 5px; }
+        .input-keypad-wrapper input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; background: #e9ecef; }
+        
+        /* Keypad Button */
+        .btn-keypad { background: #000000; color: white; border: none; width: 50px; height: 45px; border-radius: 4px; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; }
+        
+        .inline-keypad { background: #ffffff; border: 1px solid #ccc; border-radius: 6px; padding: 12px; margin-top: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .virtual-keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; justify-items: center; }
+        
+        .vk-btn { width: 100%; height: 45px; background: #ffffff; color: #000000; border: 1px solid #ccc; font-weight: bold; font-size: 16px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .vk-btn:hover { background: #e6e6e6; }
+        .vk-btn-action { background: #fce4e4; color: #d32f2f; font-size: 14px; }
+        .vk-btn:disabled { opacity: 0.5; cursor: not-allowed; background: #e0e0e0 !important; }
+
+        .btn-login-ok { background-color: #1976d2; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 10px; }
+        .btn-login-ok:disabled { background-color: #90caf9; cursor: not-allowed; }
+
+        /* POPUP OVERLAY STYLES */
+        .blurred-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 3000; }
+        .overlay-card { background: white; padding: 30px 40px; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); text-align: center; display: flex; align-items: center; gap: 20px; }
+        .btn-popup-ok { background: #1976d2; color: white; border: none; padding: 10px 25px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px; }
+
+        /* INSTRUCTIONS PAGE */
+        .instructions-container { max-width: 100%; padding: 20px 40px; margin: 0 auto; width: 100%; color: #333; }
+        .inst-content { border: 1px solid #ccc; padding: 20px; font-size: 13px; line-height: 1.6; background: #fff; margin-bottom: 20px; max-height: 60vh; overflow-y: auto; }
+        .inst-content h3 { font-size: 15px; margin: 15px 0 8px 0; text-decoration: underline; color: #000; }
+        .inst-content ol, .inst-content ul { margin-left: 20px; margin-bottom: 10px; }
+        .inst-content li { margin-bottom: 8px; }
+        
+        .palette-demo-list { list-style: none !important; margin-left: 0 !important; }
+        .palette-demo-item { display: flex; align-items: center; margin-bottom: 8px; font-weight: normal; }
+        .palette-box { width: 26px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 12px; margin-right: 12px; flex-shrink: 0; }
+        .box-grey { background-color: #e0e0e0; color: #000; border: 1px solid #aaa; border-radius: 2px; }
+        .box-red { background-color: #d32f2f; border-radius: 12px 12px 0 0; }
+        .box-green { background-color: #2e7d32; border-radius: 0 0 12px 12px; }
+        .box-purple { background-color: #7b1fa2; border-radius: 12px; }
+        .box-purple-check { background-color: #7b1fa2; border-radius: 12px; position: relative; }
+        .box-purple-check::after { content: '✔'; font-size: 10px; color: #00ff66; position: absolute; right: 2px; bottom: -2px; }
+
+        .marks-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px; }
+        .marks-table th, .marks-table td { border: 1px solid #bbb; padding: 8px 12px; text-align: center; }
+        .marks-table th { background-color: #f0f0f0; color: #000; font-weight: bold; }
+
+        .lang-select-box { margin-bottom: 15px; padding: 10px; background: #e9ecef; border: 1px solid #ced4da; border-radius: 4px; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+        .lang-select-box select { padding: 5px 10px; font-size: 13px; border-radius: 4px; border: 1px solid #aaa; }
+
+        .declaration-box { padding: 12px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; font-size: 13px; line-height: 1.4; }
+        .btn-inst-next { background-color: #1976d2; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; float: right; font-size: 15px; font-weight: bold; margin-top: 15px; }
+        .btn-inst-next:disabled { background-color: #cccccc; cursor: not-allowed; }
+
+        /* EXAM PAGE STYLES */
+        .exam-header-bar { display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 10px 20px; border-bottom: 2px solid #e0e0e0; position: relative; }
+        
+        .timer-wrapper { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; font-weight: bold; font-size: 15px; }
+        .timer-box { 
+            background: linear-gradient(180deg, #ff9421 0%, #ff5500 50%, #d44000 100%); 
+            color: white; 
+            font-family: 'Courier New', monospace; 
+            font-size: 20px; 
+            font-weight: 900; 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.6), inset 0 -2px 4px rgba(0,0,0,0.4);
+            border: 1px solid #b33600;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .timer-colon { color: #000; font-size: 20px; font-weight: bold; background: transparent; }
+
+        .btn-top-submit { background: #2e7d32; color: white; border: none; padding: 8px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-left: auto; }
+
+        .exam-workspace { display: flex; flex: 1; height: calc(100vh - 110px); }
+        .workspace-left { width: 380px; background: #f8f9fa; border-right: 1px solid #ccc; display: flex; flex-direction: column; padding: 15px; flex-shrink: 0; }
+        
+        /* 1. SEAMLESS UNBROKEN WATERMARK BACKGROUND */
+        .workspace-right { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            background-color: #fffdf9;
+            position: relative;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='120'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='rgba(255, 120, 0, 0.16)' font-size='12' font-weight='bold' font-family='Arial' transform='rotate(-25 110 60)'>RRB JE CBT-1 EXAM</text></svg>");
+            background-repeat: repeat;
+        }
+
+        .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; margin-bottom: 20px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+        .badge { width: 35px; height: 30px; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; border-radius: 4px; }
+
+        .q-palette-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; overflow-y: auto; max-height: calc(100vh - 280px); padding-right: 5px; }
+        
+        .qp-btn { 
+            width: 45px; 
+            height: 45px; 
+            border: 1px solid #b0b0b0; 
+            background: linear-gradient(180deg, #ffffff 0%, #e0e0e0 100%); 
+            border-radius: 4px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 14px; 
+            box-shadow: 0 3px 0 #999, inset 0 1px 0 rgba(255,255,255,0.8);
+            transition: all 0.1s ease;
+        }
+        .qp-btn:active {
+            box-shadow: 0 1px 0 #999;
+            transform: translateY(2px);
+        }
+
+        .q-content-area { padding: 25px; flex: 1; overflow-y: auto; z-index: 1; position: relative; }
+        
+        /* 3. NORMAL QUESTION TEXT WRITING */
+        .q-text-style { font-size: 15px; font-weight: normal; color: #111; line-height: 1.6; margin-bottom: 20px; white-space: pre-line; }
+        .q-img-style { max-width: 100%; max-height: 400px; display: block; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; }
+        
+        .opt-label-style { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #333; font-weight: normal; cursor: pointer; padding: 6px 0; }
+        .opt-label-style input { width: 17px; height: 17px; cursor: pointer; }
+
+        .q-actions-bar { padding: 15px 25px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 1; background: #fff; }
+        .btn-q-act { padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; color: white; cursor: pointer; font-size: 13px; }
+
+        .btn-calc { background: #444; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; margin-left: 10px; }
+        .btn-calc:hover { background: #222; }
+
+        /* 2. IN-EXAM VIRTUAL CALCULATOR MODAL STYLES */
+        .calc-modal { position: absolute; top: 60px; right: 30px; width: 260px; background: #333; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.4); padding: 15px; z-index: 500; border: 2px solid #555; }
+        .calc-header { display: flex; justify-content: space-between; align-items: center; color: white; margin-bottom: 10px; font-size: 13px; font-weight: bold; }
+        .calc-close { background: transparent; border: none; color: #ff5252; font-size: 16px; cursor: pointer; font-weight: bold; }
+        .calc-screen { width: 100%; height: 40px; background: #222; color: #00ff66; text-align: right; padding: 8px; font-size: 18px; font-family: monospace; border: 1px solid #444; border-radius: 4px; margin-bottom: 10px; outline: none; }
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .calc-btn { height: 38px; background: #444; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .calc-btn:hover { background: #555; }
+        .calc-btn-op { background: #ff9800; color: white; }
+        .calc-btn-op:hover { background: #e68a00; }
+        .calc-btn-eq { background: #2e7d32; color: white; grid-column: span 2; }
+        .calc-btn-eq:hover { background: #256629; }
+        .calc-btn-clear { background: #d32f2f; color: white; grid-column: span 2; }
+        .calc-btn-clear:hover { background: #b71c1c; }
+
+        /* RESULT PAGE STYLES */
+        .result-container { max-width: 850px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .pdf-header-bar { display: flex; gap: 10px; margin-bottom: 15px; font-weight: bold; font-size: 13px; }
+        .pdf-badge { padding: 5px 10px; color: white; border-radius: 3px; }
+        
+        .pdf-q-block { border-top: 1px solid #ddd; padding: 15px 0; font-size: 14px; }
+        .pdf-option-item { padding: 6px 12px; margin: 4px 0; border-radius: 3px; font-weight: bold; }
+        .pdf-selected-correct { background-color: #2e7d32; color: white; }
+        .pdf-selected-wrong { background-color: #d32f2f; color: white; }
+        .pdf-unselected-correct { background-color: #fbc02d; color: black; }
+        .pdf-normal-option { background-color: transparent; color: #333; font-weight: normal; }
+    </style>
+</head>
+<body onclick="autoFullScreen()">
+
+    <!-- Header -->
+    <header>
+        <h1>RAILWAY RECRUITMENT BOARD (RRB) - JE CBT-1 SIMULATOR</h1>
+    </header>
+
+    <!-- 1. LOGIN PAGE -->
+    <div id="page-login" class="page">
+        <div class="login-container">
+            <div class="login-form">
+                <h2>CBT EXAM LOGIN</h2>
+                <div style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Enter Password (DOB: DDMMYYYY):</label>
+                    <div class="input-keypad-wrapper">
+                        <input type="password" id="input-pass" readonly placeholder="Click Virtual Key">
+                        <button class="btn-keypad" onclick="toggleInlineKeypad()" title="Toggle Keypad">⌨</button>
+                    </div>
+                </div>
+
+                <div id="inline-keypad" class="inline-keypad hidden">
+                    <div class="virtual-keypad-grid">
+                        <button class="vk-btn" onclick="pressKey('1')">1</button>
+                        <button class="vk-btn" onclick="pressKey('2')">2</button>
+                        <button class="vk-btn" onclick="pressKey('3')">3</button>
+                        <button class="vk-btn" onclick="pressKey('4')">4</button>
+                        <button class="vk-btn" onclick="pressKey('5')">5</button>
+                        <button class="vk-btn" onclick="pressKey('6')">6</button>
+                        <button class="vk-btn" onclick="pressKey('7')">7</button>
+                        <button class="vk-btn" onclick="pressKey('8')">8</button>
+                        <button class="vk-btn" onclick="pressKey('9')">9</button>
+                        <button class="vk-btn vk-btn-action" onclick="clearPass()">Clear</button>
+                        <button class="vk-btn" onclick="pressKey('0')">0</button>
+                        <button class="vk-btn vk-btn-action" onclick="deleteKey()">Del</button>
+                    </div>
+                    <button class="btn-login-ok" onclick="onLoginSuccess()">OK</button>
+                </div>
+
+                <div id="login-error" style="color:red; margin-top:10px; display:none; text-align:center;">Invalid Password!</div>
+            </div>
+        </div>
+
+        <!-- POPUP OVERLAY ON LOGIN PAGE -->
+        <div id="blurred-overlay" class="blurred-overlay hidden">
+            <div class="overlay-card">
+                <span style="font-weight:bold; font-size:16px; color:#333;">Please click OK to proceed to the Instructions page.</span>
+                <button class="btn-popup-ok" onclick="proceedToInstructions()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. INSTRUCTIONS PAGE -->
+    <div id="page-instructions" class="page hidden">
+        <div class="instructions-container">
+            <h2 style="margin-bottom: 15px; border-bottom: 2px solid #003366; padding-bottom: 5px;">General Instructions for RRB JE CBT-1</h2>
+            <div class="inst-content">
+                <p><strong>Please read the following instructions carefully:</strong></p>
+                
+                <h3>General Instructions:</h3>
+                <ol>
+                    <li>Total duration of RRB JE CBT-1 Examination is <strong>90 minutes</strong> (120 minutes for eligible PwBD candidates).</li>
+                    <li>The clock will be set at the server. The countdown timer in the top center of screen will display the remaining time available for you to complete the examination. When the timer reaches zero, the examination will end by itself.</li>
+                    <li>The Question Palette displayed on the left side of screen will show the status of each question using one of the following symbols:
+                        <ul class="palette-demo-list" style="margin-top: 10px;">
+                            <li class="palette-demo-item">
+                                <span class="palette-box box-grey">1</span> You have not visited the question yet.
+                            </li>
+                            <li class="palette-demo-item">
+                                <span class="palette-box box-red">2</span> You have not answered the question.
+                            </li>
+                            <li class="palette-demo-item">
+                                <span class="palette-box box-green">3</span> You have answered the question.
+                            </li>
+                            <li class="palette-demo-item">
+                                <span class="palette-box box-purple">4</span> You have NOT answered the question, but have marked the question for review.
+                            </li>
+                            <li class="palette-demo-item">
+                                <span class="palette-box box-purple-check">5</span> The question(s) "Answered and Marked for Review" will be considered for evaluation.
+                            </li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h3>RRB JE CBT-1 Marking Scheme & Structure:</h3>
+                <table class="marks-table">
+                    <thead>
+                        <tr>
+                            <th>Subject / Section</th>
+                            <th>No. of Questions</th>
+                            <th>Maximum Marks</th>
+                            <th>Positive Mark</th>
+                            <th>Negative Mark</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Mathematics</td>
+                            <td>30</td>
+                            <td>30</td>
+                            <td>+1.00</td>
+                            <td>-0.33 (1/3rd)</td>
+                        </tr>
+                        <tr>
+                            <td>General Intelligence & Reasoning</td>
+                            <td>25</td>
+                            <td>25</td>
+                            <td>+1.00</td>
+                            <td>-0.33 (1/3rd)</td>
+                        </tr>
+                        <tr>
+                            <td>General Awareness</td>
+                            <td>15</td>
+                            <td>15</td>
+                            <td>+1.00</td>
+                            <td>-0.33 (1/3rd)</td>
+                        </tr>
+                        <tr>
+                            <td>General Science</td>
+                            <td>30</td>
+                            <td>30</td>
+                            <td>+1.00</td>
+                            <td>-0.33 (1/3rd)</td>
+                        </tr>
+                        <tr>
+                            <th>TOTAL</th>
+                            <th>100</th>
+                            <th>100</th>
+                            <th colspan="2">Duration: 90 Minutes</th>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Navigating & Answering Questions:</h3>
+                <ol start="4">
+                    <li>There is <strong>Negative Marking of 1/3rd mark</strong> (-0.33) for each wrong answer in RRB JE CBT-1.</li>
+                    <li>To select your answer, click on the radio button of one of the options.</li>
+                    <li>To save your answer, you MUST click on the <strong>Save & Next</strong> button.</li>
+                </ol>
+            </div>
+
+            <div class="lang-select-box">
+                <label style="font-weight: bold;">Choose your default language:</label>
+                <select id="lang-picker">
+                    <option value="English">English</option>
+                    <option value="Hindi">Hindi</option>
+                </select>
+            </div>
+
+            <div class="declaration-box">
+                <label style="cursor: pointer; font-weight: bold; display: flex; align-items: flex-start; gap: 10px;">
+                    <input type="checkbox" id="chk-declaration" onchange="handleDeclarationCheck()" style="margin-top: 3px;">
+                    <span>I have read and understood all the instructions regarding RRB JE CBT-1 Examination. I declare that I am not in possession of any prohibited items or electronic gadgets. I agree to abide by all the rules of the Railway Recruitment Board.</span>
+                </label>
+            </div>
+
+            <div style="margin-top: 15px; overflow: hidden;">
+                <button class="btn-inst-next" id="btn-start-exam" disabled onclick="startExam()">I am ready to begin</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. MAIN EXAM PAGE -->
+    <div id="page-exam" class="page hidden" style="padding:0;">
+        <div class="exam-header-bar">
+            <div class="timer-wrapper">
+                <span>Time Left:</span>
+                <span id="timer-h" class="timer-box">01</span>
+                <span class="timer-colon">:</span>
+                <span id="timer-m" class="timer-box">30</span>
+                <span class="timer-colon">:</span>
+                <span id="timer-s" class="timer-box">00</span>
+            </div>
+            
+            <button class="btn-top-submit" onclick="confirmSubmit()">SUBMIT TEST</button>
+        </div>
+
+        <div class="exam-workspace">
+            <div class="workspace-left">
+                <div class="legend-grid">
+                    <div class="legend-item"><div class="badge" id="count-ans" style="background:#2e7d32;">0</div> Answered</div>
+                    <div class="legend-item"><div class="badge" id="count-ans-rev" style="background:#7b1fa2;">0</div> Ans & Marked</div>
+                    <div class="legend-item"><div class="badge" id="count-not-ans" style="background:#d32f2f;">0</div> Not Answered</div>
+                    <div class="legend-item"><div class="badge" id="count-rev" style="background:#7b1fa2;">0</div> Marked for Review</div>
+                    <div class="legend-item"><div class="badge" id="count-not-vis" style="background:#ccc; color:#000;">0</div> Not Visited</div>
+                </div>
+
+                <h4 style="margin-bottom:10px; color:#003366;">QUESTION PALETTE</h4>
+                <div class="q-palette-grid" id="palette-grid"></div>
+            </div>
+
+            <div class="workspace-right">
+                <div style="padding: 15px 25px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; z-index: 1; background: #fff;">
+                    <strong id="display-q-num" style="color:#003366; font-size:16px;">Question No. 1</strong>
+                    <div style="display:flex; align-items:center; gap:20px;">
+                        <span style="font-size:13px; font-weight:bold;">Marks: +1.0 | Negative: -0.33</span>
+                        <!-- Calculator Toggle -->
+                        <button class="btn-calc" onclick="toggleCalculator()">🧮 Calculator</button>
+                    </div>
+                </div>
+
+                <div class="q-content-area">
+                    <div id="q-text" class="q-text-style">Loading question...</div>
+                    <div id="q-image-container"></div>
+                    <div id="options-container" style="margin-top:20px; display:flex; flex-direction:column; gap:12px;"></div>
+                </div>
+
+                <!-- 2. IN-EXAM VIRTUAL CALCULATOR POPUP -->
+                <div id="exam-calculator" class="calc-modal hidden">
+                    <div class="calc-header">
+                        <span>VIRTUAL CALCULATOR</span>
+                        <button class="calc-close" onclick="toggleCalculator()">✕</button>
+                    </div>
+                    <input type="text" id="calc-display" class="calc-screen" readonly value="0">
+                    <div class="calc-grid">
+                        <button class="calc-btn calc-btn-clear" onclick="calcClear()">C</button>
+                        <button class="calc-btn calc-btn-op" onclick="calcInput('/')">÷</button>
+                        <button class="calc-btn calc-btn-op" onclick="calcInput('*')">×</button>
+                        <button class="calc-btn" onclick="calcInput('7')">7</button>
+                        <button class="calc-btn" onclick="calcInput('8')">8</button>
+                        <button class="calc-btn" onclick="calcInput('9')">9</button>
+                        <button class="calc-btn calc-btn-op" onclick="calcInput('-')">-</button>
+                        <button class="calc-btn" onclick="calcInput('4')">4</button>
+                        <button class="calc-btn" onclick="calcInput('5')">5</button>
+                        <button class="calc-btn" onclick="calcInput('6')">6</button>
+                        <button class="calc-btn calc-btn-op" onclick="calcInput('+')">+</button>
+                        <button class="calc-btn" onclick="calcInput('1')">1</button>
+                        <button class="calc-btn" onclick="calcInput('2')">2</button>
+                        <button class="calc-btn" onclick="calcInput('3')">3</button>
+                        <button class="calc-btn calc-btn-eq" onclick="calcEqual()">=</button>
+                        <button class="calc-btn" onclick="calcInput('0')">0</button>
+                        <button class="calc-btn" onclick="calcInput('.')">.</button>
+                    </div>
+                </div>
+
+                <div class="q-actions-bar">
+                    <button class="btn-q-act" style="background:#7b1fa2;" onclick="markForReview()">MARK FOR REVIEW & NEXT</button>
+                    <button class="btn-q-act" style="background:#d32f2f;" onclick="clearResponse()">CLEAR RESPONSE</button>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-q-act" style="background:#1976d2;" onclick="navigateQuestion(-1)">PREVIOUS</button>
+                        <button class="btn-q-act" style="background:hsla(240, 96%, 32%, 0.974);" onclick="saveAndNext()">SAVE & NEXT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. RESULT & SCORECARD PAGE -->
+    <div id="page-result" class="page hidden">
+        <div class="result-container" id="pdf-container">
+            <h2 style="margin-bottom:20px; color:#003366; text-align:center;">RRB JE CBT-1 RESULT & SCORECARD</h2>
+            
+            <div class="pdf-header-bar">
+                <span class="pdf-badge" style="background:#2e7d32;">Correct Option Selected</span>
+                <span class="pdf-badge" style="background:#d32f2f;">Wrong Option Selected</span>
+                <span class="pdf-badge" style="background:#fbc02d; color:#000;">Correct Option</span>
+                <span class="pdf-badge" style="background:#757575;">Not Answered</span>
+            </div>
+
+            <div id="score-summary" style="margin-bottom: 20px; padding:15px; background:#e9ecef; border-radius:6px; font-weight:bold; font-size:15px; text-align:center;"></div>
+            <div id="pdf-questions-list"></div>
+        </div>
+    </div>
+
+    <script>
+        if (sessionStorage.getItem("exam_submitted") === "true") {
+            window.location.href = "about:blank"; 
+        }
+
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () { history.pushState(null, null, location.href); };
+
+        let overallInterval;
+        let overallTimeLeft = 5400; // 90 Minutes
+        let currentQuestionIndex = 0;
+        let isExamFinished = false;
+        let isKeypadDisabled = false;
+
+        const questionsData = [
+    {
+        id: 1,
+        text: "SKIB is related to OGNG in a certain way based on the English alphabetical order. In the same way, CUCV is related to YQHA. To which of the following options is QIRK related, following the same logic?",
+        image: "",
+        options: ["MWEP", "MWPE", "MEPW", "MEWP"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 2,
+        text: "The magnetic field inside a long, straight solenoid carrying current is __________.",
+        image: "",
+        options: ["uniform and parallel to the axis of the solenoid", "inversely proportional to the current", "zero", "stronger near the edges"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 3,
+        text: "Which of the following materials is likely to be non-biodegradable?",
+        image: "",
+        options: ["Paper", "Plastic", "Vegetable peels", "Wood"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 4,
+        text: "Which of the following articles deals with the Finance Commission that distributes taxes between the Centre and State?",
+        image: "",
+        options: ["Article 281", "Article 283", "Article 282", "Article 280"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 5,
+        text: "If the three angles of a quadrilateral are 70°, 85° and 95°, then find the fourth angle.",
+        image: "",
+        options: ["115°", "105°", "110°", "100°"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 6,
+        text: "What should come in place of the question mark (?) in the given series based on the English alphabetical order?\nONL AZX MLJ YXV ?",
+        image: "",
+        options: ["JKH", "JHK", "KJH", "KHJ"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 7,
+        text: "What should come in place of the question mark (?) in the given series?\n1 13 28 46 67 ?",
+        image: "",
+        options: ["90", "92", "93", "91"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 8,
+        text: "Which of the following is NOT an agent of dispersal of seeds?",
+        image: "",
+        options: ["Animal", "Sunlight", "Wind", "Water"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 9,
+        text: "Write the expanded form of (9a + 4b + 5c)².",
+        image: "",
+        options: [
+            "81a² + 16b² + 25c² + 72ab + 35bc + 90ac",
+            "81a² + 16b² + 25c² + 72ab + 40bc + 100ac",
+            "81a² + 16b² + 25c² + 72ab + 40bc + 90ac",
+            "81a² + 16b² + 25c² + 76ab + 40bc + 90ac"
+        ],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 10,
+        text: "Evaluate: 16 + 16 ÷ 4 - 3 × 3",
+        image: "",
+        options: ["14", "13", "11", "10"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 11,
+        text: "On oxidation, silver changes its colour to _______ and copper changes its colour to _______.",
+        image: "",
+        options: ["grey; green", "black; green", "black; blue", "grey; blue"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 12,
+        text: "Find the median of the data given below.\n180, 90, 134, 68, 52, 152, 88, 110",
+        image: "",
+        options: ["89", "60", "100", "110"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 13,
+        text: "17 men can dig a ditch 26 m long in 18 days, working 8 hours a day. How many more men should be engaged to dig a similar ditch 39 m long in 6 days, each man now working 9 hours a day?",
+        image: "",
+        options: ["48", "55", "51", "53"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 14,
+        text: "Self pollination is possible only in:",
+        image: "",
+        options: [
+            "bisexual flowers with both stamens and pistil maturing at the different time",
+            "unisexual flowers with pistil maturing first",
+            "unisexual flowers with stamen maturing first",
+            "bisexual flowers with both stamens and pistil maturing at the same time"
+        ],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 15,
+        text: "P is the sister of Q's brother R. S is the husband of Q and T is the son of S. How is P related to T?",
+        image: "",
+        options: ["Mother's sister", "Mother's mother", "Mother", "Sister"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 16,
+        text: "Select the term from among the given options that can replace the question mark (?) in the following series.\nOJH 20, MHF 25, KFD 35, IDB 55, GBZ 95, ?",
+        image: "",
+        options: ["EZX 175", "EXO 175", "YXS 175", "EXS 175"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 17,
+        text: "A man sold an article for ₹346 by first giving a d% discount on its marked price, and then another discount having the same nominal value (in ₹). If the marked price of the article is ₹1730, then what is the value of d?",
+        image: "",
+        options: ["44", "43", "40", "38"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 18,
+        text: "Where is the Taj Mahotsav held?",
+        image: "",
+        options: ["Near the Eastern gate of Taj Mahal", "In Fatehpur Sikri", "In Agra Fort", "Near the Western gate of Taj Mahal"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 19,
+        text: "Chaitanya Mahaprabhu was related to which of the following religious sects?",
+        image: "",
+        options: ["Kapalika", "Vaishnava", "Shaiva", "Tantra"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 20,
+        text: "Select the option in which the triads share the same relationship as that shared by the given triads.\nLIFE - IFEL - FELI\nCALM - ALMC - LMCA",
+        image: "",
+        options: ["MUGS - UGSM - GSMU", "LAST - TLAS - STLA", "FLIP - LIFP - FPLI", "HUNT - HTUN - HNTU"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 21,
+        text: "Find the value of K² - 3K, for which the number 58K764 is divisible by 11.",
+        image: "",
+        options: ["40", "60", "52", "48"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 22,
+        text: "An electric pole casts a shadow of length 42 m at a time when a tree 12 m high casts a shadow of length 16 m. Find the height of the pole.",
+        image: "",
+        options: ["31.5 m", "30.5 m", "29 m", "33 m"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 23,
+        text: "Which of the following is a viral infection that can be transmitted through sexual contact?",
+        image: "",
+        options: ["Tuberculosis", "Gonorrhoea", "HIV-AIDS", "Syphilis"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 24,
+        text: "(1 + sinA)(1 - sinA)(1 + tan²A) is equal to:",
+        image: "",
+        options: ["cosA", "0", "1", "tanA"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 25,
+        text: "B, C, D, F and H have different marks. Only one person has scored between C and D. Only one person has scored between H and D. F has scored less than C and D. How many people have scored less than B?",
+        image: "",
+        options: ["Two", "Three", "One", "Four"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 26,
+        text: "Seven boxes, D, E, F, R, S, T and U, are kept one over the other but not necessarily in the same order. U is kept immediately above T. E is kept immediately above D. Only F is kept above S. Only two boxes are kept above U. E is not kept at third position from the bottom. How many boxes are kept between R and F?",
+        image: "",
+        options: ["Four", "Two", "One", "Three"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 27,
+        text: "A question is followed by two statements numbered (I) and (II). You have to decide whether the data provided in the statements are sufficient to answer the question. Read both the statements and select the most appropriate answer.\n\nQuestion:\nFive friends, S, T, U, V and W, are of different ages. Who is the second eldest among them?\n\nStatements:\n(I) W is younger than T. W is elder than U.\n(II) T is the eldest. Only one person is younger than V.",
+        image: "",
+        options: [
+            "Data in statements I and II together are not sufficient to answer the question.",
+            "Data in statements I and II together are sufficient to answer the question.",
+            "Data in statement I alone is sufficient to answer the question while data in statement II is not.",
+            "Data in statement II alone is sufficient to answer the question while data in statement I is not."
+        ],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 28,
+        text: "Match the following rivers with their tributaries.\nRivers:\n1. Brahmaputra\n2. Indus\n3. Yamuna\n\nTributaries:\na. Betwa\nb. Chenab\nc. Dibang",
+        image: "",
+        options: ["1-a, 2-b, 3-c", "1-c, 2-a, 3-b", "1-b, 2-c, 3-a", "1-c, 2-b, 3-a"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 29,
+        text: "What is the relationship between current (I), power (P), and voltage (V)?",
+        image: "",
+        options: ["I = P²V", "I = PV", "I = V + P", "I = P ÷ V"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 30,
+        text: "Which of the following articles deal with the provisions regarding the election, qualification, and removal of the Vice-President of India?",
+        image: "",
+        options: ["Article 78 - 80", "Article 63 - 71", "Article 68 - 75", "Article 224 - 245"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 31,
+        text: "In a certain code language, 'soldier protect country' is coded as 'lu mh na', 'entrepreneur prosper country' is coded as 'na ki tu' and 'soldier entrepreneur vital' is coded as 'mh tu sy'. What is the possible code for 'country vital' in that language?",
+        image: "",
+        options: ["na sy", "mh na", "sy ki", "tu na"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 32,
+        text: "A conical tent has to accommodate 30 persons. Each person must have 5 m² spaces on the ground and 120 m³ of air to breathe. Find the height (in m) of the tent.",
+        image: "",
+        options: ["64", "60", "84", "72"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 33,
+        text: "A number when increased by 50 %, gives 2820. The number is:",
+        image: "",
+        options: ["3760", "940", "1880", "5640"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 34,
+        text: "What is the process by which sodium hydroxide is prepared?",
+        image: "",
+        options: ["Solvay's process", "Chlor-alkali process", "Haber's process", "Contact process"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 35,
+        text: "In a series combination of resistors, how is the voltage distributed across each resistor?",
+        image: "",
+        options: [
+            "The same across all resistors",
+            "Unaffected by resistance values",
+            "Inversely proportional to resistance",
+            "Directly proportional to resistance"
+        ],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 36,
+        text: "The length of each of the two equal sides of an isosceles triangle is 100 cm each and the length of its base is 56 cm. The area (in cm²) of the triangle is:",
+        image: "",
+        options: ["2690", "2688", "2675", "2672"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 37,
+        text: "Which of the following reactions represents the combustion of methane?",
+        image: "",
+        options: [
+            "CH₄ + 2O₂ → CO₂ + 2H₂O",
+            "CH₄ + H₂O → CO + H₂",
+            "CH₄ + Cl₂ → CH₃Cl + HCl",
+            "CH₄ + O₂ → CO + H₂O"
+        ],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 38,
+        text: "What is the average of all the natural numbers from 1 to 92?",
+        image: "",
+        options: ["47", "46", "46.5", "47.5"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 39,
+        text: "Hritik ranked 20th from the bottom and 30th from the top in his class. How many students are there in his class?",
+        image: "",
+        options: ["45", "34", "47", "49"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 40,
+        text: "Which of the following is a method of reproduction in plants, where only a single parent is involved?",
+        image: "",
+        options: ["Pollination", "Asexual reproduction", "Fertilisation", "Sexual reproduction"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 41,
+        text: "What determines the sex of a child in humans?",
+        image: "",
+        options: ["Environmental cues", "The temperature at which fertilised eggs are placed", "The fate of the embryo", "Genetic constitution"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 42,
+        text: "Find the simple interest (in closest integral ₹) on ₹4000 at 5.25% per annum rate of interest for the period from 12 February 2024 to 13 April 2024",
+        image: "",
+        options: ["36", "35", "34", "33"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 43,
+        text: "Every year, Foreign Trade Policy has been declared by which ministry of the Government of India?",
+        image: "",
+        options: ["Ministry of Commerce and Industry", "Ministry of External Affairs", "Ministry of Information", "Ministry of Home Affairs"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 44,
+        text: "Who among the following is India's first civilian space tourist?",
+        image: "",
+        options: ["Prasanth Balakrishnan Nair", "Shubhanshu Shukla", "Ajit Krishnan", "Gopichand Thotakura"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 45,
+        text: "Which of the following is an effective method to reduce plastic waste?",
+        image: "",
+        options: ["Burning plastic waste", "Using disposable plastic bags", "Recycling and reusing plastic materials", "Dumping plastic waste in landfills"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 46,
+        text: "Which of the following is a natural ecosystem?",
+        image: "",
+        options: ["Crop field", "Aquarium", "Garden", "Forest"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 47,
+        text: "In a certain code language,\n'house fire gas' is coded as 'dy ph mt',\n'pressure gas station' is coded as 'lp ph st',\n'station house farm' is coded as 'st bq dy'.\nWhat is the code for 'gas' in that language? (Note: All the codes are two-letter coded only.)",
+        image: "",
+        options: ["st", "lp", "mt", "ph"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 48,
+        text: "What is the average of all the natural numbers from 1 to 91?",
+        image: "",
+        options: ["46.5", "46", "45.5", "47"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 49,
+        text: "What property of carbon allows it to form long chains and rings?",
+        image: "",
+        options: ["Ability to form covalent bonds", "Ability to form stable bonds with other elements", "Ability to form multiple bonds", "Tendency to form single bonds"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 50,
+        text: "Based on the English alphabetical order, three of the following four are alike in a certain way and thus form a group. Which is the one that DOES NOT belong to that group?\n(Note: The odd one out is not based on the number of consonants/vowels or their position in the letter-cluster.)",
+        image: "",
+        options: ["FHD", "VST", "ZWX", "NKL"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 51,
+        text: "Akshat completes his journey in 20 hours. He covers half the distance at 57 km/h and the rest at 95 km/h. What is the length of the journey (in Km)?",
+        image: "",
+        options: ["1435", "1423", "1418", "1425"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 52,
+        text: "Which of the following statements accurately describes the role of moral suasion in controlling money?",
+        image: "",
+        options: [
+            "It is a combination of persuasion and pressure used by the RBI to influence banks' lending behaviour.",
+            "It is a direct tool used by the RBI to control the money supply by setting interest rates.",
+            "It refers to the variation in the statutory liquidity ratio to regulate the allocation of bank credit.",
+            "It involves the sale and purchase of government securities to influence the money supply."
+        ],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 53,
+        text: "Kamal starts from Point A and drives 17 km towards south. He then takes a left turn, drives 13 km, turns left and drives 21 km. He then takes a left turn and drives 18 km. He takes a final left turn, drives 4 km and stops at Point P. How far (shortest distance) and towards which direction should he drive in order to reach Point A again? (All turns are 90° turns only unless specified.)",
+        image: "",
+        options: ["3 km to the east", "5 km to the east", "4 km to the east", "6 km to the east"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 54,
+        text: "The dark blue colour in the pH scale refers to _________.",
+        image: "",
+        options: ["strong acidic solution", "weak basic solution", "neutral solution", "strong basic solution"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 55,
+        text: "What is the pH range of a strongly acidic solution?",
+        image: "",
+        options: ["7-8", "0-3", "12-14", "10-11"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 56,
+        text: "Which of the following is the product of the neutralisation of hydrochloric acid (HCl) with sodium hydroxide (NaOH)?",
+        image: "",
+        options: ["Sodium hydroxide and hydrochloric acid", "Sodium chloride and water", "Sodium chloride and hydrogen gas", "Sodium hydroxide and water"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 57,
+        text: "Which of the following released the fourth edition of SDG India Index 2023-24?",
+        image: "",
+        options: ["National Institute for Transforming India", "National Commission for Women", "National Commission of Backward Classes", "National Crime Record Bureau"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 58,
+        text: "If 'A' stands for '+', 'B' stands for '×', 'C' stands for '+' and 'D' stands for '-', what will come in place of the question mark (?) in the following equation?\n93 D 7 B 5 C (69 A 3) C 26 = ?",
+        image: "",
+        options: ["75", "122", "93", "107"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 59,
+        text: "Washing soda (Na₂CO₃·10H₂O) is obtained from which compound in the Solvay process?",
+        image: "",
+        options: ["Sodium chloride", "Sodium hydroxide", "Sodium bicarbonate", "Sodium sulphate"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 60,
+        text: "Study the given diagram carefully and answer the question that follows. The numbers in different sections indicate the number of persons.\nHow many such policemen exist that are also Indians and footballers?",
+        image: "https://i.ibb.co/3kWy99f/venn-q60.png",
+        options: ["5", "2", "12", "3"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+
+    {
+        id: 61,
+        text: "Two taps can fill a cistern in 2 hours and 54 hours respectively. A third tap can empty it in 54 hours. How long (in hours) will it take to fill the empty cistern, if all of them are opened together?",
+        image: "",
+        options: ["1.3", "2.5", "2", "4.4"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 62,
+        text: "In the following number-pairs, the second number is obtained by applying certain mathematical operations to the first number. Select the set in which the numbers are related in the same way as are the numbers of the following sets.\n(NOTE: Operations should be performed on the whole numbers, without breaking down the numbers into its constituent digits. E.g. 13 - Operations on 13 such as adding / subtracting /multiplying etc. to 13 can be performed. Breaking down 13 into 1 and 3 is not allowed.)\n\n37.4, 34.6\n45, 42.2",
+        image: "",
+        options: ["32.9, 29.1", "69, 66.2", "21.5, 17.7", "58, 56.2"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 63,
+        text: "What is the primary purpose of an electric fuse in a household circuit?",
+        image: "",
+        options: [
+            "To reduce resistance in the circuit",
+            "To increase current flow",
+            "To regulate voltage supply",
+            "To prevent overloading and short circuits"
+        ],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 64,
+        text: "A shopkeeper lists the price of a fan at 20% above its cost price and offers a 10% discount on its list price. If he earns a profit of ₹150, then what is the list price (in ₹) of the fan?",
+        image: "",
+        options: ["2054", "1969", "2250", "2172"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 65,
+        text: "What are regenerative cells used by Hydra for?",
+        image: "",
+        options: [
+            "Hydra uses regenerative cells for reproduction by sexual reproduction.",
+            "Hydra uses regenerative cells for reproduction by spore formation.",
+            "Hydra uses regenerative cells for reproduction by fragmentation.",
+            "Hydra uses regenerative cells for reproduction by budding."
+        ],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 66,
+        text: "The commutator in an electric motor is used to:",
+        image: "",
+        options: [
+            "change the direction of the magnetic field",
+            "maintain the magnetic field in the circuit",
+            "maintain the potential difference in the circuit",
+            "reverse the direction of current flowing through the coil"
+        ],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 67,
+        text: "What is the power rating of a device that draws 1.75 A of current when connected to a 180-V source?",
+        image: "",
+        options: ["105 W", "315 W", "225 W", "440 W"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 68,
+        text: "The marks scored by 10 students are given below.\n17, 16, 12, 16, 15, 16, 13, 14, 13, 20\nThe mode of the data is:",
+        image: "",
+        options: ["16", "18", "12", "17"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 69,
+        text: "There are total 120 students in three sections A, B and C of Class 10. The average marks of the three sections is 85. The average marks of section B and C is 88 and the average marks of section A is 78. Find the number of students in section A.",
+        image: "",
+        options: ["36", "28", "33", "24"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 70,
+        text: "The cost of a washing machine is 75% less than the cost of a TV. If the cost of the washing machine increases by 77% and that of the TV decreases by 27%, then what is the change in the total cost of 8 washing machines and 2 TVs?",
+        image: "",
+        options: ["Increase by 31%", "Increase by 25%", "Decrease by 22%", "Decrease by 29%"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 71,
+        text: "Who is the author of 'The Great Indian Novel,' published in 2011?",
+        image: "",
+        options: ["Shashi Tharoor", "Kiran Nagarkar", "Arundhati Roy", "Vikram Seth"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 72,
+        text: "Refer to the following number and symbol series and answer the question that follows.\n(Counting to be done from left to right only.)\n(Left) @ 2 # 2 4 3 = % 8 * 1 8 @ $ 4 ! 6 4 3 * 8 = (Right)\nHow many such numbers are there, each of which is immediately preceded by and also immediately followed by a symbol?",
+        image: "",
+        options: ["Three", "One", "Four", "Five"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 73,
+        text: "Which of the following committees suggested that the 'duty to pay taxes' should also be a Fundamental Duty of the Indian citizen?",
+        image: "",
+        options: ["Santhanam Committee", "Swaran Singh Committee", "Justice JS Verma Committee", "Sarkaria Commission"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 74,
+        text: "Which of the following rules is used to determine the direction of the force on a current-carrying conductor in an electric motor?",
+        image: "",
+        options: ["Fleming's Right-Hand Rule", "Ampere's Law", "Right-Hand Thumb Rule", "Fleming's Left-Hand Rule"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 75,
+        text: "A shopkeeper bought an article for ₹740. At what price (in ₹) should he sell the article to make 20% profit?",
+        image: "",
+        options: ["876", "900", "592", "888"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 76,
+        text: "Based on the English alphabetical order, three of the following four letter-clusters are alike in a certain way and thus form a group. Which letter-cluster DOES NOT belong to that group? (Note: The odd one out is not based on the number of consonants/vowels or their position in the letter-cluster.)",
+        image: "",
+        options: ["CFLP", "RUAF", "TWCG", "HKQU"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 77,
+        text: "Which of the following countries hosted the first business summit of the Bay of Bengal Initiative for Multi-Sectoral Technical and Economic Cooperation (BIMSTEC) in 2024?",
+        image: "",
+        options: ["Kathmandu, Nepal", "Thimphu, Bhutan", "Dhaka, Bangladesh", "New Delhi, India"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 78,
+        text: "Six students are sitting around a circular table facing the centre. L is an immediate neighbour of both J and H. I is sitting second to the left of J. K is sitting third to the right of H. G is an immediate neighbour of both I and H. The position of how many persons will remain unchanged if all persons are arranged in English alphabetical order in clockwise direction, starting from G (including G)?",
+        image: "",
+        options: ["One", "Two", "Three", "Four"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 79,
+        text: "Write the expanded form of (8a + 3b + 9c)².",
+        image: "",
+        options: [
+            "64a² + 9b² + 81c² + 48ab + 54bc + 144ac",
+            "64a² + 9b² + 81c² + 52ab + 54bc + 144ac",
+            "64a² + 9b² + 81c² + 48ab + 54bc + 154ac",
+            "64a² + 9b² + 81c² + 48ab + 49bc + 144ac"
+        ],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 80,
+        text: "Radhika travels a distance of 230 km with speed of 46 km/h and 400 km with 100 km/h by her car. Find the average speed (in km/h) of Radhika.",
+        image: "",
+        options: ["70", "75", "72", "80"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 81,
+        text: "Why is bleaching powder used for disinfecting drinking water?",
+        image: "",
+        options: [
+            "It reduces the hardness of water.",
+            "It neutralises the water.",
+            "It provides an acidic medium.",
+            "It releases chlorine, which kills germs."
+        ],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 82,
+        text: "Write the expanded form of (4a + 9b + 5c)².",
+        image: "",
+        options: [
+            "16a² + 81b² + 25c² + 76ab + 90bc + 40ac",
+            "16a² + 81b² + 25c² + 72ab + 90bc + 40ac",
+            "16a² + 81b² + 25c² + 72ab + 90bc + 50ac",
+            "16a² + 81b² + 25c² + 72ab + 85bc + 40ac"
+        ],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 83,
+        text: "The first session of Indian National Congress took place at which of the following places?",
+        image: "",
+        options: ["Bombay", "Lahore", "Calcutta", "Allahabad"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 84,
+        text: "The power in a circuit having voltage V and current I during time interval t is:",
+        image: "",
+        options: ["V/I", "I × V", "(I × t)/V", "I/V"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 85,
+        text: "Two sets of numbers are given below. In each set of numbers, certain mathematical operation(s) on the first number result(s) in the second number. Similarly, certain mathematical operation(s) on the second number result(s) in the third number and so on. Which of the given options follows the same set of operations as in the given sets?\n(NOTE: Operations should be performed on the whole numbers, without breaking down the numbers into their constituent digits. E.g. 13 - Operations on 13 such as adding/subtracting/multiplying to 13 can be performed. Breaking down 13 into 1 and 3 and then performing mathematical operations on 1 and 3 is not allowed.)\n\n16 - 17 - 21 - 30; 13 - 14 - 18 - 27",
+        image: "",
+        options: ["24 - 25 - 29 - 42", "15 - 16 - 20 - 26", "11 - 12 - 16 - 18", "22 - 23 - 27 - 36"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 86,
+        text: "The area of a square plot is 289 m². The length of each side of the plot (in m) is:",
+        image: "",
+        options: ["27", "11", "17", "7"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 87,
+        text: "Which of the following letter-clusters should replace # and % so that the pattern and relationship followed between the letter-cluster pair on the left side of :: is the same as that on the right side of ::?\n# : OKR :: XTA : %",
+        image: "",
+        options: [
+            "# = KGN, % = BXP",
+            "# = KGN, % = BXE",
+            "# = KGN, % = FXE",
+            "# = KLN, % = BXE"
+        ],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 88,
+        text: "Who among the following secured a gold medal for India at the Paris Paralympics 2024?",
+        image: "",
+        options: ["Nishad Kumar", "Preethi Pal", "Mona Agarwal", "Avani Lekhara"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 89,
+        text: "In a parallel circuit, how does the voltage across each resistor compare to the total voltage supplied by the battery?",
+        image: "",
+        options: [
+            "It is the same for each resistor.",
+            "It is inversely proportional to the resistance.",
+            "It is zero.",
+            "It is divided according to the resistance values."
+        ],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 90,
+        text: "As of 30 September 2024, how many Jan Aushadhi Kendras have been established by the Government of India across the country?",
+        image: "",
+        options: ["13,822", "14,822", "12,822", "11,822"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 91,
+        text: "If third proportional of 12 and 24 be x, then what is the value of x?",
+        image: "",
+        options: ["45", "49", "50", "48"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 92,
+        text: "An emf is induced whenever there is a change in the magnetic field linked with electric circuits. This is stated by the:",
+        image: "",
+        options: ["Ohm's law", "Gravitation law", "Newton's law", "Faraday's law"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 93,
+        text: "Which of the following reactions does NOT represent a neutralisation reaction?",
+        image: "",
+        options: [
+            "H₂SO₄ + Ca(OH)₂ → CaSO₄ + 2H₂O",
+            "CH₃COOH + NaOH → CH₃COONa + H₂O",
+            "HCl + NaOH → NaCl + H₂O",
+            "Na₂CO₃ + HCl → NaCl + CO₂ + H₂O"
+        ],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 94,
+        text: "Two pieces of cloth measure 96 metres and 144 metres in length. What is the maximum length of cloth that can be cut equally from both pieces without any remainder?",
+        image: "",
+        options: ["96 metres", "24 metres", "12 metres", "48 metres"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 95,
+        text: "Refer to the given number, symbol series and answer the question that follows.\nCounting to be done from left to right only.\n(Left) $ 7 @ 6 = & 5 Ω 4 > # 8 & % 9 1 * £ 3 (Right)\nHow many such symbols are there each of which is immediately preceded by a number and also immediately followed by another number?",
+        image: "",
+        options: ["Three", "Four", "One", "Two"],
+        correct: 3,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 96,
+        text: "If in a code language, 'A' stands for '+', 'B' stands for '×', 'C' stands for '+' and 'D' stands for '-', then the resultant of which of the following would be 55?",
+        image: "",
+        options: [
+            "16 D 112 A 63 C 77 B 31",
+            "16 A 112 B 63 C 77 D 31",
+            "16 B 112 C 63 A 77 D 31",
+            "16 C 112 D 63 A 77 B 31"
+        ],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 97,
+        text: "What should come in place of the question mark (?) in the given series?\n17 22 37 62 97 ?",
+        image: "",
+        options: ["137", "140", "142", "148"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 98,
+        text: "If a child inherits an Y chromosome from the father, what will be the sex of the child?",
+        image: "",
+        options: ["Female", "Male", "Hermaphrodite", "Cannot be determined"],
+        correct: 1,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 99,
+        text: "Komal invested a sum of ₹5000 at 20% per annum compound interest, compounded annually. If she received an amount of ₹8640 after n years, the value of n is:",
+        image: "",
+        options: ["3.5", "4", "3", "2.5"],
+        correct: 2,
+        userAnswer: null,
+        status: 'not-visited'
+    },
+    {
+        id: 100,
+        text: "50 men can do a piece of work in 12 days. The number of men required to complete the same work in 50 days is:",
+        image: "",
+        options: ["12", "11", "19", "15"],
+        correct: 0,
+        userAnswer: null,
+        status: 'not-visited'
+    }
+] ;
+
+        function autoFullScreen() {
+            if (isExamFinished) return;
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        }
+
+        document.addEventListener("fullscreenchange", () => {
+            if (!document.fullscreenElement && !isExamFinished && !document.getElementById('page-exam').classList.contains('hidden')) {
+                alert("Security Violation: Fullscreen Exited! Auto-submitting Exam.");
+                finishExam();
+            }
+        });
+
+        window.addEventListener("blur", () => {
+            if (!isExamFinished && !document.getElementById('page-exam').classList.contains('hidden')) {
+                alert("Security Violation: Window/Tab switch detected! Auto-submitting Exam.");
+                finishExam();
+            }
+        });
+
+        function toggleInlineKeypad() { 
+            document.getElementById('inline-keypad').classList.toggle('hidden'); 
+        }
+
+        function pressKey(val) { 
+            if (isKeypadDisabled) return;
+            document.getElementById('input-pass').value += val; 
+        }
+
+        function clearPass() { 
+            if (isKeypadDisabled) return;
+            document.getElementById('input-pass').value = ''; 
+        }
+
+        function deleteKey() {
+            if (isKeypadDisabled) return;
+            let currentVal = document.getElementById('input-pass').value;
+            document.getElementById('input-pass').value = currentVal.slice(0, -1);
+        }
+
+        function onLoginSuccess() {
+            if (document.getElementById('input-pass').value === "") {
+                document.getElementById('login-error').style.display = 'block';
+                return;
+            }
+
+            isKeypadDisabled = true;
+            const buttons = document.querySelectorAll('.vk-btn, .btn-login-ok');
+            buttons.forEach(btn => btn.disabled = true);
+
+            autoFullScreen();
+
+            setTimeout(() => {
+                document.getElementById('blurred-overlay').classList.remove('hidden');
+            }, 120000);
+        }
+
+        function proceedToInstructions() {
+            document.getElementById('blurred-overlay').classList.add('hidden');
+            document.getElementById('page-login').classList.add('hidden');
+            document.getElementById('page-instructions').classList.remove('hidden');
+        }
+
+        function handleDeclarationCheck() {
+            const chk = document.getElementById('chk-declaration');
+            const btn = document.getElementById('btn-start-exam');
+            btn.disabled = !chk.checked;
+        }
+
+        function startExam() {
+            autoFullScreen();
+            document.getElementById('page-instructions').classList.add('hidden');
+            document.getElementById('page-exam').classList.remove('hidden');
+            startTimers();
+            loadQuestion();
+        }
+
+        function startTimers() {
+            overallInterval = setInterval(() => {
+                overallTimeLeft--;
+                let h = Math.floor(overallTimeLeft / 3600);
+                let m = Math.floor((overallTimeLeft % 3600) / 60);
+                let s = overallTimeLeft % 60;
+                
+                document.getElementById('timer-h').innerText = h < 10 ? '0' + h : h;
+                document.getElementById('timer-m').innerText = m < 10 ? '0' + m : m;
+                document.getElementById('timer-s').innerText = s < 10 ? '0' + s : s;
+                
+                if (overallTimeLeft <= 0) finishExam();
+            }, 1000);
+        }
+
+        function loadQuestion() {
+            if (questionsData.length === 0) return;
+            
+            const q = questionsData[currentQuestionIndex];
+            if (q.status === 'not-visited') q.status = 'not-answered';
+
+            document.getElementById('display-q-num').innerText = `Question No. ${currentQuestionIndex + 1}`;
+            document.getElementById('q-text').innerText = q.text;
+
+            const imgContainer = document.getElementById('q-image-container');
+            imgContainer.innerHTML = '';
+            if (q.image && q.image.trim() !== '') {
+                const img = document.createElement('img');
+                img.src = q.image;
+                img.className = 'q-img-style';
+                imgContainer.appendChild(img);
+            }
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            q.options.forEach((opt, idx) => {
+                const label = document.createElement('label');
+                label.className = 'opt-label-style';
+                const checked = q.userAnswer === idx ? 'checked' : '';
+                label.innerHTML = `<input type="radio" name="opt" value="${idx}" ${checked} onclick="selectOption(${idx})"> <span>${String.fromCharCode(65 + idx)}. ${opt}</span>`;
+                container.appendChild(label);
+            });
+
+            renderPalette();
+        }
+
+        function selectOption(idx) { questionsData[currentQuestionIndex].userAnswer = idx; }
+
+        function saveAndNext() {
+            const q = questionsData[currentQuestionIndex];
+            q.status = q.userAnswer !== null ? 'answered' : 'not-answered';
+            navigateQuestion(1);
+        }
+
+        function clearResponse() {
+            const q = questionsData[currentQuestionIndex];
+            q.userAnswer = null;
+            q.status = 'not-answered';
+            loadQuestion();
+        }
+
+        function markForReview() {
+            const q = questionsData[currentQuestionIndex];
+            q.status = q.userAnswer !== null ? 'ans-review' : 'review';
+            navigateQuestion(1);
+        }
+
+        function navigateQuestion(dir) {
+            if (dir === 1 && currentQuestionIndex < questionsData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else if (dir === -1 && currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            } else {
+                renderPalette();
+            }
+        }
+
+        function renderPalette() {
+            const grid = document.getElementById('palette-grid');
+            grid.innerHTML = '';
+
+            let counts = { ans: 0, ansRev: 0, notAns: 0, rev: 0, notVis: 0 };
+
+            questionsData.forEach((q, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'qp-btn';
+                btn.innerText = i + 1;
+
+                if (q.status === 'answered') { 
+                    btn.style.background = 'linear-gradient(180deg, #4caf50 0%, #2e7d32 100%)'; 
+                    btn.style.color = '#fff'; 
+                    btn.style.boxShadow = '0 3px 0 #1b5e20';
+                    counts.ans++; 
+                }
+                else if (q.status === 'not-answered') { 
+                    btn.style.background = 'linear-gradient(180deg, #ef5350 0%, #d32f2f 100%)'; 
+                    btn.style.color = '#fff'; 
+                    btn.style.boxShadow = '0 3px 0 #b71c1c';
+                    counts.notAns++; 
+                }
+                else if (q.status === 'review') { 
+                    btn.style.background = 'linear-gradient(180deg, #ab47bc 0%, #7b1fa2 100%)'; 
+                    btn.style.color = '#fff'; 
+                    btn.style.boxShadow = '0 3px 0 #4a148c';
+                    counts.rev++; 
+                }
+                else if (q.status === 'ans-review') { 
+                    btn.style.background = 'linear-gradient(180deg, #ab47bc 0%, #7b1fa2 100%)'; 
+                    btn.style.color = '#fff'; 
+                    btn.style.boxShadow = '0 3px 0 #4a148c';
+                    counts.ansRev++; 
+                }
+                else { 
+                    btn.style.background = 'linear-gradient(180deg, #ffffff 0%, #e0e0e0 100%)'; 
+                    btn.style.color = '#000'; 
+                    counts.notVis++; 
+                }
+
+                btn.onclick = () => { currentQuestionIndex = i; loadQuestion(); };
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('count-ans').innerText = counts.ans;
+            document.getElementById('count-ans-rev').innerText = counts.ansRev;
+            document.getElementById('count-not-ans').innerText = counts.notAns;
+            document.getElementById('count-rev').innerText = counts.rev;
+            document.getElementById('count-not-vis').innerText = counts.notVis;
+        }
+
+        /* 2. VIRTUAL CALCULATOR LOGIC */
+        function toggleCalculator() {
+            document.getElementById('exam-calculator').classList.toggle('hidden');
+        }
+
+        function calcInput(val) {
+            const screen = document.getElementById('calc-display');
+            if (screen.value === "0" || screen.value === "Error") {
+                screen.value = val;
+            } else {
+                screen.value += val;
+            }
+        }
+
+        function calcClear() {
+            document.getElementById('calc-display').value = "0";
+        }
+
+        function calcEqual() {
+            const screen = document.getElementById('calc-display');
+            try {
+                screen.value = eval(screen.value);
+            } catch (e) {
+                screen.value = "Error";
+            }
+        }
+
+        function confirmSubmit() { if (confirm("Are you sure you want to submit your RRB JE CBT-1 exam?")) finishExam(); }
+
+        function finishExam() {
+            if (isExamFinished) return;
+            isExamFinished = true;
+            sessionStorage.setItem("exam_submitted", "true");
+
+            clearInterval(overallInterval);
+
+            document.getElementById('page-exam').classList.add('hidden');
+            document.getElementById('page-result').classList.remove('hidden');
+            
+            generateResultView();
+            autoDownloadPDF();
+        }
+
+        function generateResultView() {
+            const container = document.getElementById('pdf-questions-list');
+            container.innerHTML = '';
+
+            let correctCount = 0;
+            let wrongCount = 0;
+            let unattemptedCount = 0;
+
+            questionsData.forEach((q, idx) => {
+                const block = document.createElement('div');
+                block.className = 'pdf-q-block';
+                let html = `<div><strong>Q.No: ${idx + 1}</strong> ${q.text}</div>`;
+                
+                if (q.image && q.image.trim() !== '') {
+                    html += `<img src="${q.image}" style="max-width:300px; display:block; margin:8px 0;">`;
+                }
+
+                if (q.userAnswer === null) {
+                    unattemptedCount++;
+                } else if (q.userAnswer === q.correct) {
+                    correctCount++;
+                } else {
+                    wrongCount++;
+                }
+
+                q.options.forEach((opt, oIdx) => {
+                    let optClass = 'pdf-option-item pdf-normal-option';
+                    
+                    if (q.userAnswer === oIdx && q.userAnswer === q.correct) {
+                        optClass = 'pdf-option-item pdf-selected-correct';
+                    } else if (q.userAnswer === oIdx && q.userAnswer !== q.correct) {
+                        optClass = 'pdf-option-item pdf-selected-wrong';
+                    } else if (oIdx === q.correct) {
+                        optClass = 'pdf-option-item pdf-unselected-correct';
+                    }
+                    
+                    html += `<div class="${optClass}">${oIdx + 1}) ${opt}</div>`;
+                });
+
+                block.innerHTML = html;
+                container.appendChild(block);
+            });
+
+            let totalMarks = (correctCount * 1.0) - (wrongCount * 0.33);
+            document.getElementById('score-summary').innerHTML = `
+                <div>Correct Answers: <span style="color:green;">${correctCount}</span> | Wrong Answers: <span style="color:red;">${wrongCount}</span> | Unattempted: ${unattemptedCount}</div>
+                <div style="font-size:18px; margin-top:5px; color:#003366;">Final Score: ${totalMarks.toFixed(2)} / ${questionsData.length}</div>
+            `;
+        }
+
+        function autoDownloadPDF() {
+            const element = document.getElementById('pdf-container');
+            html2canvas(element, { scale: 2, useCORS: true, allowTaint: true }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                const imgWidth = 210; 
+                const pageHeight = 295; 
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                pdf.save('RRB_JE_CBT1_Result.pdf');
+
+                setTimeout(() => {
+                    history.replaceState(null, "", "about:blank");
+                    window.location.href = "about:blank";
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
